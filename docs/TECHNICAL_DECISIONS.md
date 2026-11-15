@@ -15,7 +15,7 @@ Cubit state. **Status: implemented.**
 `Process.start` with an argument list (no shell): no quoting bugs, Unicode
 paths work, nothing large passes through Dart memory. Output goes to
 `<name>.part` and is renamed on success. Cancel sends `q`, then kills after
-3 s. **Status: implemented; unit-tested. The integration suite passes 10/10 in a
+3 s. Verified on Windows with FFmpeg 8.1.3: integration suite 10/10. **Status: implemented; unit-tested. The integration suite passes 10/10 in a
 Linux container (FFmpeg 7.1.5, `libx264`). It has not run on Windows (ENV-3).**
 
 ## TD-003 — FFmpeg build and licensing (Windows)
@@ -34,7 +34,11 @@ Linux container (FFmpeg 7.1.5, `libx264`). It has not run on Windows (ENV-3).**
 - H.264 and AAC are patent-encumbered. `h264_mf` uses the encoder licensed
   with Windows. Whether additional licensing is needed for distribution is a
   legal question to settle before release.
-- **Open:** choose and pin the binary source. Candidates are the BtbN
+- **Verified 2026-11-15:** the FFmpeg-Builds `n8.1` LGPL Windows build
+  (8.1.3) contains `libopenh264`, `h264_mf`, `aac`, `libass` and `drawtext`,
+  and both H.264 encoders produce valid output through the engine.
+- **Open:** pin a dated release instead of the rolling `latest` tag.
+  Original note: choose and pin the binary source. Candidates are the BtbN
   `FFmpeg-Builds` LGPL Windows build or a self-built LGPL configuration.
   Must verify: it contains `h264_mf` and/or `libopenh264`, `aac`, and (for
   subtitles later) `libass`; and record its version, URL and checksum in
@@ -199,7 +203,12 @@ Kotlin's incremental compiler cannot handle on Windows. Fixed with
 `kotlin.incremental=false` in `android/gradle.properties`; the debug APK now
 builds. It has not been installed or run.
 
-**ENV-3 — Smart App Control is enforcing and blocks unsigned executables.**
+**ENV-3 — Smart App Control blocked unsigned executables (turned off by the
+machine owner on 2026-11-15).** With it off, FFmpeg and the debug app run and
+the engine suite passes on Windows. The findings below still matter because
+end users may have it on.
+
+While it was enforcing:
 The downloaded LGPL `ffmpeg.exe` (unsigned) is refused with "An Application
 Control policy has blocked this file" (Code Integrity events 3077 / 3118).
 Consequences:

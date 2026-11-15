@@ -17,9 +17,9 @@ detected build is GPL or LGPL and which H.264 encoder will be used.
 
 ### Pinned build
 
-Downloaded 2026-11-15, **not yet run** (see ENV-3 in
-`docs/TECHNICAL_DECISIONS.md`: Smart App Control blocks it on the development
-machine because it is unsigned).
+Downloaded 2026-11-15 and verified with the engine integration suite. It is
+unsigned, so Windows Smart App Control blocks it where that is enabled (ENV-3
+in `docs/TECHNICAL_DECISIONS.md`).
 
 - Project: FFmpeg-Builds (`github.com/FFmpeg-Builds/FFmpeg-Builds`; the
   former `BtbN/FFmpeg-Builds` URL redirects there)
@@ -30,8 +30,9 @@ machine because it is unsigned).
 
 The `latest` tag is rebuilt regularly, so this URL will serve a different
 file later. Before release, pin a dated release tag instead and record the
-`ffmpeg -version` configuration line here. Encoder contents (`h264_mf`,
-`libopenh264`, `aac`, `libass`) are still unverified.
+`ffmpeg -version` configuration line here. Reported version:
+`n8.1.3-35-gf1acb0a266-20261114`. Contains `libopenh264`, `h264_mf`, `aac`,
+`libass` and `drawtext`; no `libx264` (as expected for LGPL).
 
 ## whisper.cpp
 

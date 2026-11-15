@@ -8,6 +8,7 @@ library;
 export 'src/android/android_video_engine.dart';
 export 'src/errors.dart';
 export 'src/ffmpeg/ffmpeg_binaries.dart';
+export 'src/ffmpeg/ffmpeg_commands.dart' show CropRect, computeCrop;
 export 'src/highlights/candidate_validator.dart';
 export 'src/highlights/heuristic_highlight_detector.dart';
 export 'src/models/clip.dart';

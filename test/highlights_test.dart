@@ -260,5 +260,17 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('1:40.0 –'), findsOneWidget);
+
+    // Turn the top highlight into a clip.
+    expect(find.textContaining('No clips yet'), findsOneWidget);
+    await tester.tap(find.text('Why do most people fail at saving money?'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Create clip').first);
+    await tester.tap(find.text('Create clip').first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('No clips yet'), findsNothing);
+    expect(find.text('Export'), findsOneWidget);
+    expect(find.text('Horizontal position'), findsOneWidget);
+    expect(find.text('Vertical position'), findsNothing);
   });
 }

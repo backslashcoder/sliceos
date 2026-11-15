@@ -36,8 +36,9 @@ lib/
                   database/, models/                              [built]
                   storage/, network/, errors/                     [planned]
   features/
-    dashboard/ import_video/ projects/ rendering/ settings/       [built, minimal]
-    transcription/ highlights/ clip_editor/ subtitles/
+    dashboard/ import_video/ projects/ rendering/ settings/
+    transcription/ highlights/ clip_editor/                       [built, minimal]
+    subtitles/
     exports/ authentication/ synchronization/                     [planned]
 packages/sliceos_engine/   independent Dart package               [built]
 native/windows/            FFmpeg binaries (not committed)        [docs only]
@@ -138,11 +139,12 @@ contain processing logic.
 |-------|--------|----------------|
 | `SettingsCubit` | built (engine status only) | engine capabilities; later preferences, models, privacy |
 | `VideoImportCubit` | built | choose a file, inspect, expose `MediaInfo` |
-| `RenderCubit` | built (single job) | run a render, mirror progress, cancel; later the queue |
+| `RenderCubit` | built (single job) | run a render tagged with its clip, mirror progress, cancel; later the queue |
 | `ProjectCubit` | built | project list, create, rename, relink, delete |
 | `TranscriptionCubit` | built (subtitle import) | project transcript; later local Whisper |
 | `HighlightCubit` | built (offline) | detect, validate, adjust, remove candidates; later cloud AI |
-| `ClipEditorCubit`, `SyncCubit` | planned | |
+| `ClipEditorCubit` | built (no preview yet) | clips of a project: create, trim, reframe, remove, export records |
+| `SyncCubit` | planned | |
 
 ### Navigation
 
@@ -156,8 +158,8 @@ different page layouts as the editor arrives, not a scaled copy.
 `ProjectRepository` is the only code that writes project SQL. The file lives
 in the app-support directory (`%APPDATA%\com.sliceos\sliceos\sliceos.db`).
 
-SQLite tables: `projects`, `media`, `transcripts`, `clip_candidates` (built), then
-`clips`, `edit_operations`, `render_jobs`, `exports`,
+SQLite tables: `projects`, `media`, `transcripts`, `clip_candidates`, `clips`,
+`exports` (built), then `render_jobs`,
 `sync_outbox`. UUID primary keys, a `version` column per syncable record, and
 `schemaVersion` in every serialised document (`Clip` already carries one and
 rejects newer versions).

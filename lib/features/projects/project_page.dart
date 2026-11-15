@@ -8,12 +8,14 @@ import '../../app/router.dart';
 import '../../app/shell/page_scaffold.dart';
 import '../../core/database/app_database.dart';
 import '../../core/models/project.dart';
+import '../clip_editor/clip_cubit.dart';
+import '../clip_editor/clip_repository.dart';
+import '../clip_editor/clips_card.dart';
 import '../highlights/candidate_repository.dart';
 import '../highlights/highlight_cubit.dart';
 import '../highlights/highlights_card.dart';
 import '../import_video/media_details_card.dart';
 import '../import_video/video_file_picker.dart';
-import '../rendering/sample_export_card.dart';
 import '../settings/settings_cubit.dart';
 import '../transcription/transcript_card.dart';
 import '../transcription/transcript_repository.dart';
@@ -153,10 +155,6 @@ class ProjectPage extends StatelessWidget {
             // Recreate the cubits if the project points at another video.
             key: ValueKey('${project.id}:${media.id}'),
             projectId: project.id,
-            mediaDurationMs: media.info.durationMs,
-          ),
-          const SizedBox(height: 16),
-          SampleExportCard(
             media: media.info,
             canRender: capabilities?.canRender ?? false,
           ),
@@ -166,21 +164,24 @@ class ProjectPage extends StatelessWidget {
   }
 }
 
-/// Owns the per-project transcript and highlight cubits.
+/// Owns the per-project transcript, highlight and clip cubits.
 class _TranscriptAndHighlights extends StatelessWidget {
   const _TranscriptAndHighlights({
     super.key,
     required this.projectId,
-    required this.mediaDurationMs,
+    required this.media,
+    required this.canRender,
   });
 
   final String projectId;
-  final int mediaDurationMs;
+  final MediaInfo media;
+  final bool canRender;
 
   @override
   Widget build(BuildContext context) {
     final database = context.read<AppDatabase>();
     final transcripts = TranscriptRepository(database);
+    final mediaDurationMs = media.durationMs;
     return MultiBlocProvider(
       providers: [
         BlocProvider(
@@ -199,6 +200,13 @@ class _TranscriptAndHighlights extends StatelessWidget {
             mediaDurationMs: mediaDurationMs,
           )..load(),
         ),
+        BlocProvider(
+          create: (_) => ClipEditorCubit(
+            ClipRepository(database),
+            projectId: projectId,
+            media: media,
+          )..load(),
+        ),
       ],
       // A new or removed transcript invalidates the stored candidates.
       child: BlocConsumer<TranscriptionCubit, TranscriptionState>(
@@ -210,6 +218,8 @@ class _TranscriptAndHighlights extends StatelessWidget {
             TranscriptCard(mediaDurationMs: mediaDurationMs),
             const SizedBox(height: 16),
             HighlightsCard(hasTranscript: state.segments.isNotEmpty),
+            const SizedBox(height: 16),
+            ClipsCard(canRender: canRender),
           ],
         ),
       ),

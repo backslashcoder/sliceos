@@ -11,6 +11,7 @@ class RenderState {
     this.fraction,
     this.result,
     this.errorMessage,
+    this.tag,
   });
 
   final RenderStatus status;
@@ -19,6 +20,10 @@ class RenderState {
   final double? fraction;
   final RenderResult? result;
   final String? errorMessage;
+
+  /// Identifies what is being rendered (for example a clip id), so a widget
+  /// can tell whether this state is about its own item.
+  final String? tag;
 }
 
 /// Runs one render at a time and mirrors its progress. The render queue for
@@ -30,9 +35,9 @@ class RenderCubit extends Cubit<RenderState> {
   String? _jobId;
   StreamSubscription<RenderProgress>? _progress;
 
-  Future<void> render(RenderRequest request) async {
+  Future<void> render(RenderRequest request, {String? tag}) async {
     if (state.status == RenderStatus.rendering) return;
-    emit(const RenderState(status: RenderStatus.rendering));
+    emit(RenderState(status: RenderStatus.rendering, tag: tag));
     try {
       final job = _engine.renderClip(request);
       _jobId = job.id;
@@ -42,16 +47,25 @@ class RenderCubit extends Cubit<RenderState> {
             RenderState(
               status: RenderStatus.rendering,
               fraction: progress.fraction,
+              tag: tag,
             ),
           );
         }
       });
       final result = await job.result;
-      _emit(RenderState(status: RenderStatus.completed, result: result));
+      _emit(
+        RenderState(status: RenderStatus.completed, result: result, tag: tag),
+      );
     } on JobCancelledException {
-      _emit(const RenderState(status: RenderStatus.cancelled));
+      _emit(RenderState(status: RenderStatus.cancelled, tag: tag));
     } on EngineException catch (e) {
-      _emit(RenderState(status: RenderStatus.failure, errorMessage: e.message));
+      _emit(
+        RenderState(
+          status: RenderStatus.failure,
+          errorMessage: e.message,
+          tag: tag,
+        ),
+      );
     } finally {
       await _progress?.cancel();
       _progress = null;

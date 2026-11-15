@@ -19,15 +19,17 @@ platform-neutral behind `VideoEngine`.
 
 ## M1 — Windows engine proof of concept
 
+Smart App Control was turned off on the development machine on 2026-11-15
+(ENV-3), which unblocked everything below.
+
 - [x] FFprobe JSON parsing, crop geometry, render/audio/thumbnail argument builders, progress parser (unit-tested)
-- [~] `WindowsVideoEngine`: process management, `.part` atomic output, cancellation, encoder probing — **verified on Linux only** (see next line); never run against FFmpeg on Windows
-- [~] Integration suite `test/windows_engine_integration_test.dart` (Unicode paths, rotation, two audio tracks, audio extraction, thumbnail, render, cancel, failure) — **10/10 pass in a Linux container** (`dart:stable` 3.14.0, Debian FFmpeg 7.1.5, `libx264`). Still skipped on the Windows host (ENV-3). Not covered there: `h264_mf` / `libopenh264`, Windows path handling, the pinned FFmpeg 8.1 build.
-- [~] LGPL FFmpeg 8.1 build downloaded to `native/windows/ffmpeg/bin` (details in `native/windows/README.md`) — **cannot run: blocked by Smart App Control (ENV-3)**, so the suite is still skipped
-- [ ] Decide how to run FFmpeg on the dev machine (ENV-3), then run the suite
-- [ ] Pin a dated FFmpeg release tag; verify its encoders
+- [x] `WindowsVideoEngine` against real FFmpeg **on Windows**: integration suite 10/10 (Unicode paths, rotation, two audio tracks, audio extraction, thumbnail, render with progress, cancel, failure). Also passes in a Linux container (FFmpeg 7.1.5).
+- [x] LGPL FFmpeg 8.1.3 build in `native/windows/ffmpeg/bin`; contains `libopenh264`, `h264_mf`, `aac`, `libass` (`subtitles`/`ass` filters) and `drawtext`. Both `libopenh264` and `h264_mf` render correctly.
+- [x] End-to-end through the app's Cubits with real files (`test/real_engine_pipeline_test.dart`): import → project → subtitles → highlights → rendered 9:16 clip
+- [~] The same flow by hand in the running app — the app launches; nobody has clicked through import and export yet
+- [ ] Pin a dated FFmpeg release tag (currently the rolling `latest`)
 - [ ] Code-signing plan for shipped executables (ENV-3)
-- [ ] Run the app on Windows and export a clip from a real video
-- [ ] Check 4K, long, and variable-frame-rate sources; measure `h264_mf` / `libopenh264` quality
+- [ ] 4K, long, and variable-frame-rate real footage; compare `h264_mf` / `libopenh264` quality and pick bitrates
 
 ## M2 — Android engine proof of concept (deferred)
 
@@ -51,9 +53,9 @@ platform-neutral behind `VideoEngine`.
 - [x] `projects` + `media` tables, `Project` model with versioned serialisation, `ProjectRepository` — tested
 - [x] `ProjectCubit`; dashboard project list; create project from an imported video; project page with rename, delete, missing-source detection and relink — 30 app tests pass
 - [x] Windows build launches and creates `%APPDATA%\com.sliceos\sliceos\sliceos.db`
-- [~] Create / relink through the real file dialog — not exercised, needs FFmpeg to inspect a file (ENV-3)
-- [x] `transcripts` and `clip_candidates` tables (migration 2)
-- [ ] Tables for clips, edit operations, render jobs, exports, sync outbox (added with their features)
+- [~] Create / relink through the real file dialog — not exercised by hand
+- [x] `transcripts` and `clip_candidates` tables (migration 2); `clips` and `exports` (migration 3)
+- [ ] Tables for edit operations, render jobs, exports, sync outbox (added with their features)
 - [ ] Render job persistence and recovery; storage cleanup
 
 ## M4b — YouTube link import (new requirement, TD-011)
@@ -66,14 +68,19 @@ platform-neutral behind `VideoEngine`.
 - [x] Offline heuristic detector (`HeuristicHighlightDetector`) behind `detectHighlights` — pure Dart, 11 tests; works without FFmpeg. English word lists; other languages rank on structure only. Not yet tried on a real transcript.
 - [x] Subtitle import (`.srt` / `.vtt`) as a transcript source: parser in the engine (6 tests), `TranscriptionCubit`, transcript card on the project page
 - [x] `HighlightCubit` + highlights card: find highlights, score breakdown with reasons, validation messages, manual time adjustment, snap to sentences, remove — stored in SQLite (schema v2); 40 app tests pass
-- [~] The above in the running Windows app — **not seen running**: the rebuilt `sliceos.exe` was blocked by Smart App Control (ENV-3). A copy of the real on-disk v1 database was upgraded to v2 in a test.
-- [ ] Turn a highlight into a clip and export it (needs the clip model/editor, M6)
+- [~] The above in the running Windows app — the app launches and upgraded the on-disk database to schema v2; the screens have not been clicked through by hand.
+- [x] Turn a highlight into a clip ("Create clip", only for candidates that pass validation)
 - [ ] Cloud AI highlight path (M7)
 - [x] Deterministic `CandidateValidator` and score weights (done early in M0)
 
 ## M6 — Editor, subtitles, rendering
 
-- [ ] `ClipEditorCubit`, preview, timeline, crop/position, subtitles, branding, render queue, batch + ZIP export
+- [x] `ClipEditorCubit` + clips card on the project page: clips from highlights or added by hand, edit times, aspect ratio (9:16, 1:1, 4:5, 16:9), horizontal/vertical framing, export to MP4 with progress and cancel, last-export record. Edits are appended to each clip's operation history. `clips` and `exports` tables (schema v3).
+- [x] Verified with real FFmpeg on Windows in `test/real_engine_pipeline_test.dart`: a 9:16 export, then a trimmed, reframed 1:1 export. 49 app tests pass.
+- [~] Clicking through it in the running app — app launches; not done by hand
+- [ ] Video preview and timeline; zoom control; clip rename
+- [ ] Subtitles burn-in, branding/logo
+- [ ] Render queue, batch export, ZIP export; persisted render jobs
 - [ ] Face detection and smart reframing (TD-006)
 
 ## M7 — Backend and sync
@@ -90,7 +97,7 @@ platform-neutral behind `VideoEngine`.
 
 ## Immediate next actions
 
-1. (You) Decide how to handle Smart App Control (ENV-3). It now blocks the app's own debug build as well as FFmpeg, so the Windows app cannot be run on this machine at the moment.
-2. Run the engine suite on Windows once FFmpeg can run; check the LGPL encoders.
-3. Drive the Windows app by hand: import, inspect, export.
-4. M3 Whisper on Windows (its binary will hit ENV-3 too), or M5 offline highlight detection, which is pure Dart and needs no native binary.
+1. Click through the Windows app with a real video: import, create project, import subtitles, find highlights, create clip, export.
+2. Burned-in subtitles on exported clips (the FFmpeg build has libass), or video preview in the clip editor.
+3. M3 Whisper on Windows, so transcripts no longer need a subtitle file.
+4. (You) Decisions for TD-011 (YouTube link import) and code signing.

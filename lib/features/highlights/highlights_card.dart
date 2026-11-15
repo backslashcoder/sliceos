@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sliceos_engine/sliceos_engine.dart';
 
 import '../../core/utilities/formatters.dart';
+import '../clip_editor/clip_cubit.dart';
+import '../clip_editor/time_range_dialog.dart';
 import 'highlight_cubit.dart';
 
 String describeIssue(CandidateIssue issue) => switch (issue) {
@@ -93,7 +95,11 @@ class _CandidateTile extends StatelessWidget {
     final cubit = context.read<HighlightCubit>();
     final range = await showDialog<(int, int)>(
       context: context,
-      builder: (context) => _AdjustDialog(candidate: candidate),
+      builder: (context) => TimeRangeDialog(
+        title: 'Adjust times',
+        startMs: candidate.startMs,
+        endMs: candidate.endMs,
+      ),
     );
     if (range != null) {
       await cubit.adjust(candidate.id, startMs: range.$1, endMs: range.$2);
@@ -198,6 +204,15 @@ class _CandidateTile extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
+            FilledButton.tonal(
+              // Only candidates that pass validation can become clips.
+              onPressed: issues.isEmpty
+                  ? () => context.read<ClipEditorCubit>().createFromCandidate(
+                      candidate,
+                    )
+                  : null,
+              child: const Text('Create clip'),
+            ),
             OutlinedButton(
               onPressed: () => _adjust(context),
               child: const Text('Adjust times'),
@@ -212,72 +227,6 @@ class _CandidateTile extends StatelessWidget {
             ),
           ],
         ),
-      ],
-    );
-  }
-}
-
-class _AdjustDialog extends StatefulWidget {
-  const _AdjustDialog({required this.candidate});
-
-  final ClipCandidate candidate;
-
-  @override
-  State<_AdjustDialog> createState() => _AdjustDialogState();
-}
-
-class _AdjustDialogState extends State<_AdjustDialog> {
-  late final _start = TextEditingController(
-    text: formatTimestamp(widget.candidate.startMs),
-  );
-  late final _end = TextEditingController(
-    text: formatTimestamp(widget.candidate.endMs),
-  );
-  String? _error;
-
-  @override
-  void dispose() {
-    _start.dispose();
-    _end.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final start = parseTimestamp(_start.text);
-    final end = parseTimestamp(_end.text);
-    if (start == null || end == null) {
-      setState(() => _error = 'Enter times like 1:23.5 or 1:02:03');
-      return;
-    }
-    Navigator.pop(context, (start, end));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Adjust times'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _start,
-            autofocus: true,
-            decoration: const InputDecoration(labelText: 'Start'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _end,
-            decoration: InputDecoration(labelText: 'End', errorText: _error),
-            onSubmitted: (_) => _submit(),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(onPressed: _submit, child: const Text('Save')),
       ],
     );
   }

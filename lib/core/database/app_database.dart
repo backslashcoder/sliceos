@@ -87,6 +87,7 @@ class AppDatabase {
 final List<Migration> _migrations = [
   _createProjectsAndMedia,
   _createTranscriptsAndCandidates,
+  _createClipsAndExports,
 ];
 
 void _createProjectsAndMedia(Database db) {
@@ -144,4 +145,33 @@ void _createTranscriptsAndCandidates(Database db) {
   db.execute(
     'CREATE INDEX clip_candidates_project_id ON clip_candidates (project_id)',
   );
+}
+
+void _createClipsAndExports(Database db) {
+  // A clip is one versioned JSON document (range, framing, edit history).
+  db.execute('''
+    CREATE TABLE clips (
+      id          TEXT PRIMARY KEY NOT NULL,
+      project_id  TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      clip_json   TEXT NOT NULL,
+      created_at  INTEGER NOT NULL,
+      updated_at  INTEGER NOT NULL
+    ) STRICT
+  ''');
+  db.execute('CREATE INDEX clips_project_id ON clips (project_id)');
+  // Export history. Rows outlive their clip so the history stays complete.
+  db.execute('''
+    CREATE TABLE exports (
+      id           TEXT PRIMARY KEY NOT NULL,
+      project_id   TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      clip_id      TEXT REFERENCES clips (id) ON DELETE SET NULL,
+      output_path  TEXT NOT NULL,
+      width        INTEGER NOT NULL,
+      height       INTEGER NOT NULL,
+      duration_ms  INTEGER NOT NULL,
+      encoder      TEXT NOT NULL,
+      created_at   INTEGER NOT NULL
+    ) STRICT
+  ''');
+  db.execute('CREATE INDEX exports_clip_id ON exports (clip_id)');
 }
