@@ -84,7 +84,10 @@ class AppDatabase {
 }
 
 /// Append only. Never edit a migration that has shipped.
-final List<Migration> _migrations = [_createProjectsAndMedia];
+final List<Migration> _migrations = [
+  _createProjectsAndMedia,
+  _createTranscriptsAndCandidates,
+];
 
 void _createProjectsAndMedia(Database db) {
   db.execute('''
@@ -107,4 +110,38 @@ void _createProjectsAndMedia(Database db) {
   ''');
   db.execute('CREATE INDEX media_project_id ON media (project_id)');
   db.execute('CREATE INDEX projects_updated_at ON projects (updated_at)');
+}
+
+void _createTranscriptsAndCandidates(Database db) {
+  // One transcript per project; segments are stored as one JSON document
+  // because they are always read and replaced together.
+  db.execute('''
+    CREATE TABLE transcripts (
+      id             TEXT PRIMARY KEY NOT NULL,
+      project_id     TEXT NOT NULL UNIQUE
+                     REFERENCES projects (id) ON DELETE CASCADE,
+      origin         TEXT NOT NULL,
+      language       TEXT NOT NULL,
+      model          TEXT NOT NULL,
+      segments_json  TEXT NOT NULL,
+      created_at     INTEGER NOT NULL
+    ) STRICT
+  ''');
+  db.execute('''
+    CREATE TABLE clip_candidates (
+      id          TEXT PRIMARY KEY NOT NULL,
+      project_id  TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      start_ms    INTEGER NOT NULL,
+      end_ms      INTEGER NOT NULL,
+      title       TEXT NOT NULL,
+      score_json  TEXT NOT NULL,
+      total       REAL NOT NULL,
+      source      TEXT NOT NULL,
+      reason      TEXT,
+      created_at  INTEGER NOT NULL
+    ) STRICT
+  ''');
+  db.execute(
+    'CREATE INDEX clip_candidates_project_id ON clip_candidates (project_id)',
+  );
 }

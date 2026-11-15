@@ -36,28 +36,34 @@ class _SliceOsAppState extends State<SliceOsApp> {
   @override
   Widget build(BuildContext context) {
     final engine = widget.engine;
-    return MultiBlocProvider(
+    return MultiRepositoryProvider(
       providers: [
-        BlocProvider(create: (_) => SettingsCubit(engine)..load()),
-        BlocProvider(
-          create: (_) => VideoImportCubit(engine, pickVideo: pickVideoFile),
-        ),
-        BlocProvider(create: (_) => RenderCubit(engine)),
-        BlocProvider(
-          create: (_) => ProjectCubit(
-            ProjectRepository(widget.database),
-            engine,
-            pickVideo: pickVideoFile,
-          )..load(),
-        ),
+        RepositoryProvider<VideoEngine>.value(value: engine),
+        RepositoryProvider<AppDatabase>.value(value: widget.database),
       ],
-      child: MaterialApp.router(
-        title: 'SliceOS',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        themeMode: ThemeMode.dark,
-        routerConfig: _router,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => SettingsCubit(engine)..load()),
+          BlocProvider(
+            create: (_) => VideoImportCubit(engine, pickVideo: pickVideoFile),
+          ),
+          BlocProvider(create: (_) => RenderCubit(engine)),
+          BlocProvider(
+            create: (_) => ProjectCubit(
+              ProjectRepository(widget.database),
+              engine,
+              pickVideo: pickVideoFile,
+            )..load(),
+          ),
+        ],
+        child: MaterialApp.router(
+          title: 'SliceOS',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: ThemeMode.dark,
+          routerConfig: _router,
+        ),
       ),
     );
   }

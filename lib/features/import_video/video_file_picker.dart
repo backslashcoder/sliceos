@@ -21,3 +21,11 @@ Future<String?> pickClipSaveLocation(String suggestedName) async {
   if (path == null) return null;
   return path.toLowerCase().endsWith('.mp4') ? path : '$path.mp4';
 }
+
+/// Shows the system file dialog for a subtitle file. Returns null when the
+/// user cancels.
+Future<String?> pickSubtitleFile() async => (await openFile(
+  acceptedTypeGroups: const [
+    XTypeGroup(label: 'Subtitles', extensions: ['srt', 'vtt']),
+  ],
+))?.path;

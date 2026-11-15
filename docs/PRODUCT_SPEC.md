@@ -35,7 +35,7 @@ composition → FFmpeg rendering → local MP4 export → optional ZIP.
 | # | Feature |
 |---|---------|
 | 1 | Dashboard and project management |
-| 2 | Local video import and metadata inspection |
+| 2 | Video import from a local file **or a YouTube link**, and metadata inspection |
 | 3 | Thumbnail generation |
 | 4 | Audio extraction |
 | 5 | Local Whisper transcription with timestamped segments |
@@ -51,6 +51,11 @@ composition → FFmpeg rendering → local MP4 export → optional ZIP.
 | 15 | Project recovery and local storage management |
 | 16 | Optional authentication and project sync |
 | 17 | Settings, model downloads, privacy controls, subscriptions |
+
+**Import sources (added 2026-11-15).** A project starts from either a local
+video file or a YouTube link. A link is downloaded on the user's device
+into app-managed storage and then follows the same pipeline as a file; the
+backend is never involved. Open questions are in TD-011.
 
 **Out of scope for V1:** the freelancer / clipper marketplace.
 

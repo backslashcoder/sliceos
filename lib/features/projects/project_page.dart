@@ -2,12 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:sliceos_engine/sliceos_engine.dart';
+
 import '../../app/router.dart';
 import '../../app/shell/page_scaffold.dart';
+import '../../core/database/app_database.dart';
 import '../../core/models/project.dart';
+import '../highlights/candidate_repository.dart';
+import '../highlights/highlight_cubit.dart';
+import '../highlights/highlights_card.dart';
 import '../import_video/media_details_card.dart';
+import '../import_video/video_file_picker.dart';
 import '../rendering/sample_export_card.dart';
 import '../settings/settings_cubit.dart';
+import '../transcription/transcript_card.dart';
+import '../transcription/transcript_repository.dart';
+import '../transcription/transcription_cubit.dart';
 import 'project_cubit.dart';
 
 /// Workspace of one project. Today: source details, relinking and the sample
@@ -139,12 +149,70 @@ class ProjectPage extends StatelessWidget {
         else ...[
           MediaDetailsCard(media: media.info),
           const SizedBox(height: 16),
+          _TranscriptAndHighlights(
+            // Recreate the cubits if the project points at another video.
+            key: ValueKey('${project.id}:${media.id}'),
+            projectId: project.id,
+            mediaDurationMs: media.info.durationMs,
+          ),
+          const SizedBox(height: 16),
           SampleExportCard(
             media: media.info,
             canRender: capabilities?.canRender ?? false,
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Owns the per-project transcript and highlight cubits.
+class _TranscriptAndHighlights extends StatelessWidget {
+  const _TranscriptAndHighlights({
+    super.key,
+    required this.projectId,
+    required this.mediaDurationMs,
+  });
+
+  final String projectId;
+  final int mediaDurationMs;
+
+  @override
+  Widget build(BuildContext context) {
+    final database = context.read<AppDatabase>();
+    final transcripts = TranscriptRepository(database);
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => TranscriptionCubit(
+            transcripts,
+            projectId,
+            pickSubtitleFile: pickSubtitleFile,
+          )..load(),
+        ),
+        BlocProvider(
+          create: (context) => HighlightCubit(
+            CandidateRepository(database),
+            transcripts,
+            context.read<VideoEngine>(),
+            projectId: projectId,
+            mediaDurationMs: mediaDurationMs,
+          )..load(),
+        ),
+      ],
+      // A new or removed transcript invalidates the stored candidates.
+      child: BlocConsumer<TranscriptionCubit, TranscriptionState>(
+        listenWhen: (before, after) => before.stored != after.stored,
+        listener: (context, state) => context.read<HighlightCubit>().load(),
+        builder: (context, state) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TranscriptCard(mediaDurationMs: mediaDurationMs),
+            const SizedBox(height: 16),
+            HighlightsCard(hasTranscript: state.segments.isNotEmpty),
+          ],
+        ),
+      ),
     );
   }
 }

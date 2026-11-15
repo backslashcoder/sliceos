@@ -93,6 +93,15 @@ FFmpeg with the same arguments:
   argument list.
 - `FfmpegProgressParser` — parses `-progress pipe:1` blocks.
 
+### Highlights (`src/highlights/`) [built]
+
+- `HeuristicHighlightDetector` — offline candidates from a transcript: every
+  window on segment edges within the duration limits is scored on the five
+  published components; the best non-overlapping windows are returned with a
+  plain-language reason.
+- `CandidateValidator` — the deterministic gate every candidate (cloud,
+  heuristic or manual) must pass before rendering.
+
 ### Windows engine [built]
 
 `WindowsVideoEngine` starts `ffmpeg.exe` / `ffprobe.exe` with
@@ -131,7 +140,9 @@ contain processing logic.
 | `VideoImportCubit` | built | choose a file, inspect, expose `MediaInfo` |
 | `RenderCubit` | built (single job) | run a render, mirror progress, cancel; later the queue |
 | `ProjectCubit` | built | project list, create, rename, relink, delete |
-| `TranscriptionCubit`, `HighlightCubit`, `ClipEditorCubit`, `SyncCubit` | planned | |
+| `TranscriptionCubit` | built (subtitle import) | project transcript; later local Whisper |
+| `HighlightCubit` | built (offline) | detect, validate, adjust, remove candidates; later cloud AI |
+| `ClipEditorCubit`, `SyncCubit` | planned | |
 
 ### Navigation
 
@@ -145,8 +156,8 @@ different page layouts as the editor arrives, not a scaled copy.
 `ProjectRepository` is the only code that writes project SQL. The file lives
 in the app-support directory (`%APPDATA%\com.sliceos\sliceos\sliceos.db`).
 
-SQLite tables: `projects`, `media` (built), then `transcripts`, `transcript_segments`,
-`clip_candidates`, `clips`, `edit_operations`, `render_jobs`, `exports`,
+SQLite tables: `projects`, `media`, `transcripts`, `clip_candidates` (built), then
+`clips`, `edit_operations`, `render_jobs`, `exports`,
 `sync_outbox`. UUID primary keys, a `version` column per syncable record, and
 `schemaVersion` in every serialised document (`Clip` already carries one and
 rejects newer versions).

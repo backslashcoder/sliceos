@@ -52,12 +52,23 @@ platform-neutral behind `VideoEngine`.
 - [x] `ProjectCubit`; dashboard project list; create project from an imported video; project page with rename, delete, missing-source detection and relink — 30 app tests pass
 - [x] Windows build launches and creates `%APPDATA%\com.sliceos\sliceos\sliceos.db`
 - [~] Create / relink through the real file dialog — not exercised, needs FFmpeg to inspect a file (ENV-3)
-- [ ] Tables for transcripts, candidates, clips, edit operations, render jobs, exports, sync outbox (added with their features)
+- [x] `transcripts` and `clip_candidates` tables (migration 2)
+- [ ] Tables for clips, edit operations, render jobs, exports, sync outbox (added with their features)
 - [ ] Render job persistence and recovery; storage cleanup
+
+## M4b — YouTube link import (new requirement, TD-011)
+
+- [ ] Product/legal decision on terms and content rights
+- [ ] Validate a downloader; download to app storage with progress and cancel; media origin migration
 
 ## M5 — Highlights
 
-- [ ] Offline heuristic detector behind `detectHighlights`; `HighlightCubit`; review and timestamp adjustment
+- [x] Offline heuristic detector (`HeuristicHighlightDetector`) behind `detectHighlights` — pure Dart, 11 tests; works without FFmpeg. English word lists; other languages rank on structure only. Not yet tried on a real transcript.
+- [x] Subtitle import (`.srt` / `.vtt`) as a transcript source: parser in the engine (6 tests), `TranscriptionCubit`, transcript card on the project page
+- [x] `HighlightCubit` + highlights card: find highlights, score breakdown with reasons, validation messages, manual time adjustment, snap to sentences, remove — stored in SQLite (schema v2); 40 app tests pass
+- [~] The above in the running Windows app — **not seen running**: the rebuilt `sliceos.exe` was blocked by Smart App Control (ENV-3). A copy of the real on-disk v1 database was upgraded to v2 in a test.
+- [ ] Turn a highlight into a clip and export it (needs the clip model/editor, M6)
+- [ ] Cloud AI highlight path (M7)
 - [x] Deterministic `CandidateValidator` and score weights (done early in M0)
 
 ## M6 — Editor, subtitles, rendering
@@ -79,7 +90,7 @@ platform-neutral behind `VideoEngine`.
 
 ## Immediate next actions
 
-1. (You) Decide how to handle Smart App Control (ENV-3); until then FFmpeg cannot run on this Windows host, so the app can inspect and render nothing here.
+1. (You) Decide how to handle Smart App Control (ENV-3). It now blocks the app's own debug build as well as FFmpeg, so the Windows app cannot be run on this machine at the moment.
 2. Run the engine suite on Windows once FFmpeg can run; check the LGPL encoders.
 3. Drive the Windows app by hand: import, inspect, export.
 4. M3 Whisper on Windows (its binary will hit ENV-3 too), or M5 offline highlight detection, which is pure Dart and needs no native binary.

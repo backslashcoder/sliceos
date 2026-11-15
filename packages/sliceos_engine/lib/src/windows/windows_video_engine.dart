@@ -10,6 +10,7 @@ import '../ffmpeg/ffmpeg_binaries.dart';
 import '../ffmpeg/ffmpeg_commands.dart';
 import '../ffmpeg/ffmpeg_progress_parser.dart';
 import '../ffmpeg/ffprobe_parser.dart';
+import '../highlights/heuristic_highlight_detector.dart';
 import '../models/clip_candidate.dart';
 import '../models/media_info.dart';
 import '../models/processing_job.dart';
@@ -61,7 +62,7 @@ class WindowsVideoEngine implements VideoEngine {
         canExtractAudio: true,
         canRender: toolchain.videoEncoder != null,
         canTranscribe: false,
-        canDetectHighlights: false,
+        canDetectHighlights: true,
         ffmpegVersion: toolchain.version,
         videoEncoder: toolchain.videoEncoder,
         isGplBuild: toolchain.isGplBuild,
@@ -77,7 +78,7 @@ class WindowsVideoEngine implements VideoEngine {
         canExtractAudio: false,
         canRender: false,
         canTranscribe: false,
-        canDetectHighlights: false,
+        canDetectHighlights: true,
         unavailableReason: e.message,
       );
     }
@@ -180,9 +181,7 @@ class WindowsVideoEngine implements VideoEngine {
   @override
   Future<List<ClipCandidate>> detectHighlights(
     HighlightRequest request,
-  ) async => throw const EngineUnsupportedException(
-    'Offline highlight detection is not implemented yet',
-  );
+  ) async => const HeuristicHighlightDetector().detect(request);
 
   @override
   Future<void> cancel(String jobId) async {

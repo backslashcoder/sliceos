@@ -62,8 +62,9 @@ class FakeVideoEngine implements VideoEngine {
       throw UnimplementedError();
 
   @override
-  Future<List<ClipCandidate>> detectHighlights(HighlightRequest request) =>
-      throw UnimplementedError();
+  Future<List<ClipCandidate>> detectHighlights(
+    HighlightRequest request,
+  ) async => const HeuristicHighlightDetector().detect(request);
 
   @override
   ProcessingJob? jobStatus(String jobId) => null;

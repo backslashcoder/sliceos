@@ -127,6 +127,35 @@ resolution independent, cannot express an out-of-frame window, and is the
 natural output of face tracking (a centre per time range). **Status:
 implemented for static crops.**
 
+## TD-011 — Import from a YouTube link
+
+Requirement added 2026-11-15: besides choosing a local file, the user can
+paste a YouTube link. **Status: open — not designed in detail, not built.**
+
+- **Shape.** A source step in front of the existing pipeline: link →
+  download to app-managed storage → `inspect` → project. Everything after the
+  download is unchanged. `media` needs an origin (file or URL) so a project
+  can show where its video came from and re-download it; that is a schema
+  migration.
+- **Storage.** Unlike a file import, SliceOS owns the downloaded copy, so it
+  counts toward app storage and storage cleanup must be able to remove it
+  (and re-download later).
+- **Local-first holds.** The download runs on the device, directly from
+  YouTube. Nothing goes through the SliceOS backend.
+- **Tooling to validate.** `yt-dlp` is the usual downloader. It would be one
+  more bundled executable, so it has the same code-signing / Smart App
+  Control problem as FFmpeg (ENV-3), and it needs frequent updates because
+  YouTube changes often. Its licence and an update mechanism must be checked
+  before adopting it.
+- **Terms and rights — needs a product/legal decision before shipping.**
+  YouTube's Terms of Service restrict downloading videos outside the
+  features YouTube itself provides, and users may not own the videos they
+  paste. Options to decide between include limiting the feature to content
+  the user confirms they have rights to, or to their own channel. This must
+  be settled before the feature is built, not after.
+- Offline, private, age-restricted and removed videos, and very long
+  downloads (progress, cancel, resume) all need explicit states.
+
 ---
 
 ## Environment findings (this development machine)
@@ -176,8 +205,11 @@ Control policy has blocked this file" (Code Integrity events 3077 / 3118).
 Consequences:
 
 - The Windows engine cannot be exercised on this machine with an unsigned
-  FFmpeg build. The locally built debug `sliceos.exe` was *not* blocked when
-  launched, but it cannot start the bundled `ffmpeg.exe`.
+  FFmpeg build.
+- Locally built `sliceos.exe` is blocked **inconsistently**: two debug
+  builds launched on 2026-11-15, a third build the same day was refused
+  (event 3077 names `sliceos.exe`). Smart App Control judges each new
+  binary, so a development build cannot be relied on to run here.
 - Smart App Control is a Windows security setting. Turning it off is the
   machine owner's decision and Windows does not allow turning it back on
   without a reset. The project must not depend on it being off.
